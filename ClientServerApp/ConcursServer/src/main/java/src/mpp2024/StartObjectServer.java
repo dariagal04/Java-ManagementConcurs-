@@ -38,14 +38,14 @@ public class StartObjectServer {
         IParticipantRepo participantRepo = new ParticipantiDBRepo(prop);
         IPersoanaOficiuRepo persoanaOficiu = new PersoanaOficiuDBRepo(prop);
 
-        IPersoanaOficiuRepo persoanaOficiuHRepo = new PersoanaOficiuDBRepo(prop);
-        IParticipantRepo participantHRepo = new ParticipantiDBRepo(prop);
+        IPersoanaOficiuRepo persoanaOficiuHRepo = new PersoanaOficiuHibernateDBRepo();
+        IParticipantRepo participantHRepo = new ParticipantHibernateDBRepo();
 
         CategorieService concursServiceCategorie=new CategorieService((CategorieDBRepo) categorieVarsta);
         InscriereService concursServiceInscriere= new InscriereService((InscriereDBRepo) inscriere);
         NumeProbaService concursServiceNumeProba = new NumeProbaService((NumeProbaDBRepo) numeProba);
-        ParticipantiService concursServiceParticipant = new ParticipantiService((ParticipantiDBRepo) participantHRepo);
-        PersoanaOficiuService concursServicePersoanaOficiu = new PersoanaOficiuService((PersoanaOficiuDBRepo) persoanaOficiuHRepo);
+        ParticipantiService concursServiceParticipant = new ParticipantiService(participantHRepo);
+        PersoanaOficiuService concursServicePersoanaOficiu = new PersoanaOficiuService( persoanaOficiuHRepo);
         IConcursService service = new Services(concursServiceCategorie,concursServiceInscriere,concursServiceNumeProba,concursServiceParticipant,concursServicePersoanaOficiu);
         int serverPort=defaultPort;
         try{

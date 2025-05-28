@@ -10,4 +10,6 @@ public interface IParticipantRepo extends Repository<Participant, Integer> {
     Participant getParticipantByName(String name);
     List<Participant> getParticipantsByProba(int proba);
     List<Participant> getParticipantsByCategory(int IdCategorie);
+
+    Participant getParticipantByCNP(String cnp);
 }

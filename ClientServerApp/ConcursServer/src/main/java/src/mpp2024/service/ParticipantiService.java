@@ -2,6 +2,7 @@ package src.mpp2024.service;
 
 import src.mpp2024.domain.*;
 import src.mpp2024.repo.DB.ParticipantiDBRepo;
+import src.mpp2024.repo.Interfete.IParticipantRepo;
 import src.mpp2024.services.ConcursException;
 import src.mpp2024.services.IConcursObserver;
 import src.mpp2024.services.IConcursService;
@@ -11,9 +12,9 @@ import java.util.Map;
 
 public class ParticipantiService implements IConcursService {
 
-    private final ParticipantiDBRepo participantiDBRepo;
+    private final IParticipantRepo participantiDBRepo;
 
-    public ParticipantiService(ParticipantiDBRepo participantiDBRepo) {
+    public ParticipantiService(IParticipantRepo participantiDBRepo) {
         this.participantiDBRepo = participantiDBRepo;
     }
 

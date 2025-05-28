@@ -3,6 +3,7 @@ package src.mpp2024.service;
 import src.mpp2024.domain.*;
 import src.mpp2024.dto.PersoanaOficiuDTO;
 import src.mpp2024.repo.DB.PersoanaOficiuDBRepo;
+import src.mpp2024.repo.Interfete.IPersoanaOficiuRepo;
 import src.mpp2024.services.ConcursException;
 import src.mpp2024.services.IConcursObserver;
 import src.mpp2024.services.IConcursService;
@@ -14,11 +15,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PersoanaOficiuService implements IConcursService {
 
-    private final PersoanaOficiuDBRepo persoanaOficiuDBRepo;
+    private final IPersoanaOficiuRepo persoanaOficiuDBRepo;
     private Map<Integer,IConcursObserver> loggedPOs;
 
 
-    public PersoanaOficiuService(PersoanaOficiuDBRepo persoanaOficiuDBRepo) {
+    public PersoanaOficiuService(IPersoanaOficiuRepo persoanaOficiuDBRepo) {
         this.persoanaOficiuDBRepo = persoanaOficiuDBRepo;
         loggedPOs = new ConcurrentHashMap<>();
     }

@@ -102,7 +102,7 @@ public class ParticipantHibernateDBRepo implements IParticipantRepo {
         return List.of();
     }
 
-    //@Override
+    @Override
     public Participant getParticipantByCNP(String cnp) {
         try (Session session = HibernateUtils.getSessionFactory().openSession()) {
             Query<Participant> query = session.createQuery("from Participant where cnp = :cnp", Participant.class);
