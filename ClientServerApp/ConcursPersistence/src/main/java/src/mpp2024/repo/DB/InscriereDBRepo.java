@@ -68,6 +68,7 @@ public class InscriereDBRepo implements IInscriereRepo {
             ps.setInt(3, entity.getIdCategorie());
 
             ps.executeUpdate();
+
             return true;
 
         } catch (SQLException e) {

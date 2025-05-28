@@ -1,5 +1,6 @@
 package src.mpp2024;
 
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -9,6 +10,7 @@ import javafx.scene.control.*;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import src.mpp2024.messaging.RabbitConsumer;
 import src.mpp2024.service.*;
 import src.mpp2024.domain.*;
 import src.mpp2024.services.ConcursException;
@@ -62,6 +64,17 @@ public class OficiuLoggedIn implements Initializable, IConcursObserver {
         } else {
             userNameLabel.setText("No user logged in.");
         }
+
+        RabbitConsumer.startListening(message -> {
+            Platform.runLater(() -> {
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Notificare");
+                alert.setHeaderText("Actualizare concurs");
+                alert.setContentText(message);
+                alert.showAndWait();
+            });
+        });
+
     }
 
     private void loadCompetitions() throws ConcursException {

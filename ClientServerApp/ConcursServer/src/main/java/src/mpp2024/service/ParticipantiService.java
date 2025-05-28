@@ -1,6 +1,7 @@
 package src.mpp2024.service;
 
 import src.mpp2024.domain.*;
+import src.mpp2024.messaging.RabbitPublisher;
 import src.mpp2024.repo.DB.ParticipantiDBRepo;
 import src.mpp2024.repo.Interfete.IParticipantRepo;
 import src.mpp2024.services.ConcursException;
@@ -19,6 +20,7 @@ public class ParticipantiService implements IConcursService {
     }
 
     public boolean saveEntity(Participant participant) {
+        RabbitPublisher.sendNotification("Inscriere nouă: participant " + participant.getNume());
         return participantiDBRepo.saveEntity(participant);
     }
 
