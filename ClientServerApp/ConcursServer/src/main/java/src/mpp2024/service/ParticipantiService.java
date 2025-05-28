@@ -2,6 +2,8 @@ package src.mpp2024.service;
 
 import src.mpp2024.domain.*;
 import src.mpp2024.repo.DB.ParticipantiDBRepo;
+import src.mpp2024.services.ConcursException;
+import src.mpp2024.services.IConcursObserver;
 import src.mpp2024.services.IConcursService;
 
 import java.util.List;
@@ -24,6 +26,7 @@ public class ParticipantiService implements IConcursService {
         return false;
     }
 
+
     public Participant getParticipantByNume(String nume) {
         return participantiDBRepo.getParticipantByName(nume);
     }
@@ -33,13 +36,18 @@ public class ParticipantiService implements IConcursService {
     }
 
     @Override
-    public PersoanaOficiu login(String username, String password) throws Exception {
+    public void login(PersoanaOficiu persoanaOficiu, IConcursObserver client) throws ConcursException {
+
+    }
+
+    @Override
+    public PersoanaOficiu getPersoanaOficiuByUsernamePassword(String username, String password) throws ConcursException {
         return null;
     }
 
     @Override
-    public List<Inscriere> getInscrieriProba(int probaId) throws Exception {
-        return List.of();
+    public void logout(PersoanaOficiu persoanaOficiu, IConcursObserver client) throws ConcursException {
+
     }
 
     @Override

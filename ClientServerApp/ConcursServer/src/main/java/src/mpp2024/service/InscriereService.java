@@ -4,6 +4,8 @@ import src.mpp2024.domain.CategorieVarsta;
 import src.mpp2024.domain.*;
 import src.mpp2024.domain.Participant;
 import src.mpp2024.repo.DB.InscriereDBRepo;
+import src.mpp2024.services.ConcursException;
+import src.mpp2024.services.IConcursObserver;
 import src.mpp2024.services.IConcursService;
 
 import java.util.List;
@@ -52,7 +54,7 @@ public class InscriereService implements IConcursService {
 
     @Override
     public boolean saveEntityi(Inscriere i) {
-        return saveEntity(i);
+        return inscriereDBRepo.saveEntity(i);
     }
 
 
@@ -62,12 +64,17 @@ public class InscriereService implements IConcursService {
 
 
     @Override
-    public PersoanaOficiu login(String username, String password) throws Exception {
+    public void login(PersoanaOficiu persoanaOficiu, IConcursObserver client) throws ConcursException {
+
+    }
+
+    @Override
+    public PersoanaOficiu getPersoanaOficiuByUsernamePassword(String username, String password) throws ConcursException {
         return null;
     }
 
     @Override
-    public List<Inscriere> getInscrieriProba(int probaId) throws Exception {
-        return List.of();
+    public void logout(PersoanaOficiu persoanaOficiu, IConcursObserver client) throws ConcursException {
+
     }
 }

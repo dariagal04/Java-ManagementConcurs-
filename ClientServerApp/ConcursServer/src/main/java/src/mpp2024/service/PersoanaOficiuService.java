@@ -1,23 +1,43 @@
 package src.mpp2024.service;
 
 import src.mpp2024.domain.*;
+import src.mpp2024.dto.PersoanaOficiuDTO;
 import src.mpp2024.repo.DB.PersoanaOficiuDBRepo;
+import src.mpp2024.services.ConcursException;
+import src.mpp2024.services.IConcursObserver;
 import src.mpp2024.services.IConcursService;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PersoanaOficiuService implements IConcursService {
 
     private final PersoanaOficiuDBRepo persoanaOficiuDBRepo;
+    private Map<Integer,IConcursObserver> loggedPOs;
+
 
     public PersoanaOficiuService(PersoanaOficiuDBRepo persoanaOficiuDBRepo) {
         this.persoanaOficiuDBRepo = persoanaOficiuDBRepo;
+        loggedPOs = new ConcurrentHashMap<>();
     }
 
-    public PersoanaOficiu authenticate(String username, String password) {
+    @Override
+    public synchronized void login(PersoanaOficiu persoanaOficiu, IConcursObserver client) throws ConcursException {
+        PersoanaOficiu persoanaOficiu1= persoanaOficiuDBRepo.getOneByUsername(persoanaOficiu.getUsername());
+        if (persoanaOficiu1 != null) {
+            if(loggedPOs.get(persoanaOficiu1.getId()) != null)
+                throw new ConcursException("PersoanaOficiu already logged");
+            loggedPOs.put(persoanaOficiu1.getId(), client);
+        }else
+            throw new ConcursException("PersoanaOficiu not found");
 
-        PersoanaOficiu persoanaOficiu = persoanaOficiuDBRepo.getOneByUsername(username);
+    }
+
+    @Override
+    public PersoanaOficiu getPersoanaOficiuByUsernamePassword(String username, String password) throws ConcursException {
+        PersoanaOficiu persoanaOficiu= persoanaOficiuDBRepo.getOneByUsername(username);
         if (persoanaOficiu != null && persoanaOficiu.getPassword().equals(password)) {
             return persoanaOficiu;
         }
@@ -25,13 +45,10 @@ public class PersoanaOficiuService implements IConcursService {
     }
 
     @Override
-    public PersoanaOficiu login(String username, String password) throws Exception {
-        return authenticate(username, password);
-    }
-
-    @Override
-    public List<Inscriere> getInscrieriProba(int probaId) throws Exception {
-        return List.of();
+    public void logout(PersoanaOficiu persoanaOficiu, IConcursObserver client) throws ConcursException {
+        IConcursObserver localClient = loggedPOs.remove(persoanaOficiu.getId());
+        if(localClient == null)
+            throw new ConcursException("Persoana Oficiu "+persoanaOficiu.getId()+" is not logged in.");
     }
 
     @Override
@@ -73,4 +90,14 @@ public class PersoanaOficiuService implements IConcursService {
     public boolean saveEntityi(Inscriere i) {
         return false;
     }
+
+//    public void authenticate(String username, String password) {
+//
+//        PersoanaOficiu persoanaOficiu = persoanaOficiuDBRepo.getOneByUsername(username);
+//        if (persoanaOficiu != null && persoanaOficiu.getPassword().equals(password)) {
+//            return persoanaOficiu;
+//        }
+//        return null;
+//    }
+
 }

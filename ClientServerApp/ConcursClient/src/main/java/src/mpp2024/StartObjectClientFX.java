@@ -3,6 +3,7 @@ package src.mpp2024;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
@@ -22,7 +23,7 @@ import java.util.Properties;
 
 
 public class StartObjectClientFX extends Application {
-    private static int defaultChatPort=55555;
+    private static int defaultChatPort=55556;
     private static String defaultServer="localhost";
 
     private static Logger logger= LogManager.getLogger(StartObjectClientFX.class);
@@ -36,7 +37,7 @@ public class StartObjectClientFX extends Application {
             System.out.println("Client properties set. ");
             clientProps.list(System.out);
         } catch (IOException e) {
-            System.err.println("Cannot find chatclient.properties " + e);
+            System.err.println("Cannot find client.properties " + e);
             return;
         }
         String serverIP = clientProps.getProperty("server.host", defaultServer);
@@ -52,18 +53,24 @@ public class StartObjectClientFX extends Application {
         IConcursService server = new ConcursServicesObjectProxy(serverIP, serverPort);
 
 
-        FXMLLoader fxmlLoader = new FXMLLoader(StartObjectClientFX.class.getResource("login-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 320, 240);
+        FXMLLoader loader=new FXMLLoader(getClass().getResource("/concursclient/login-view.fxml"));
+        Parent root=loader.load();
+        OficiuController controller=loader.getController();
+        controller.setServer(server);
 
+        FXMLLoader cloader=new FXMLLoader(getClass().getResource("/concursclient/persoanaOficiu-view.fxml"));
+        Parent croot=cloader.load();
+        OficiuLoggedIn loggedController=cloader.getController();
+        loggedController.setServer(server);
 
-        OficiuController ctr = fxmlLoader.getController();
-        ctr.setServer(server);
-        //ctr.setServices(categorieService, inscriereService, numeProbaService, participantiService, persoanaOficiuService);
+        controller.setLoggedInController(loggedController);
+        controller.setMainParent(croot);
 
-        stage.setTitle("LOGIN");
-        stage.setScene(scene);
+        stage.setTitle("PO log in");
+        stage.setScene(new Scene(root));
         stage.show();
     }
 
+    public static void main(String[] args) {launch(args);}
 
 }

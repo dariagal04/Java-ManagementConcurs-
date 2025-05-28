@@ -1,5 +1,6 @@
 package src.mpp2024;
 
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -20,140 +21,87 @@ import java.util.Map;
 import java.util.ResourceBundle;
 
 public class OficiuLoggedIn implements Initializable, IConcursObserver {
-
-//    CategorieService categorieService;
-//    InscriereService inscriereService;
-//    NumeProbaService numeProbaService;
-//    ParticipantiService participantiService;
-//    PersoanaOficiuService persoanaOficiuService;
     IConcursService server;
-
     private static Logger logger= LogManager.getLogger(OficiuController.class);
-
     PersoanaOficiu persoanaOficiu;
     Stage stage;
-//    public void setService(PersoanaOficiuService persoanaOficiuService,InscriereService inscriereService,NumeProbaService numeProbaService,CategorieService categorieService,ParticipantiService participantiService,Stage stage) {
-//        this.persoanaOficiuService = persoanaOficiuService;
-//        this.stage = stage;
-//        this.inscriereService = inscriereService;
-//        this.numeProbaService = numeProbaService;
-//        this.categorieService = categorieService;
-//        this.participantiService = participantiService;
-//    }
 
     public void setServer(IConcursService server){ this.server = server;}
 
-
     @FXML
     private Label userNameLabel;
-
     @FXML
     private ListView<String> competitionsListView;
-
     @FXML
     private ComboBox<String> probaComboBox;
-
     @FXML
     private ComboBox<String> categorieComboBox;
-
     @FXML
     private ListView<String> participantsListView;
-
     @FXML
     private Button searchButton;
-
     @FXML
     private TextField cnpTextField;
-
     @FXML
     private TextField numeTextField;
-
     @FXML
     private TextField varstaTextField;
-
     @FXML
     private ComboBox<String> probaComboBox2;
-
     @FXML
     private Button inscriereButton;
+    @FXML
+    private Button logoutButton;
 
-
-
-
-
-
-    public void setUser(PersoanaOficiu persoanaOficiu) {
+    public void setUser(PersoanaOficiu persoanaOficiu) throws ConcursException {
         this.persoanaOficiu = persoanaOficiu;
 
         if (persoanaOficiu != null) {
-            PersoanaOficiu loggedInUser = this.persoanaOficiu;
-
-            System.out.println("Logged in user: " + loggedInUser.getUsername() + " Oficiul: "+ loggedInUser.getLocatie_oficiu());
-
-            userNameLabel.setText(loggedInUser.getUsername() + " Oficiul: " + loggedInUser.getLocatie_oficiu());
+            userNameLabel.setText(persoanaOficiu.getUsername() + " Oficiul: " + persoanaOficiu.getLocatie_oficiu());
             loadCompetitions();
-
         } else {
             userNameLabel.setText("No user logged in.");
-            System.out.println("No user logged in.");
         }
-
-
     }
 
-
-
-    private void loadCompetitions() {
+    private void loadCompetitions() throws ConcursException {
         competitionsListView.getItems().clear();
-
-        // Obține lista probelor și a numărului de copii înscriși
         Map<String, Map<String, Integer>> competitions = server.getCompetitionsWithParticipants();
 
-        if (competitions == null || competitions.isEmpty()) {
-            System.out.println("Nu sunt competiții disponibile.");
-            return;
-        }
-        for (String proba : competitions.keySet()) {
-            competitionsListView.getItems().add("Proba: " + proba);
-            for (String categorie : competitions.get(proba).keySet()) {
-                int nrParticipanti = competitions.get(proba).get(categorie);
-                competitionsListView.getItems().add("   - " + categorie + " ani: " + nrParticipanti + " înscriși");
+        if (competitions != null && !competitions.isEmpty()) {
+            for (String proba : competitions.keySet()) {
+                competitionsListView.getItems().add("Proba: " + proba);
+                for (String categorie : competitions.get(proba).keySet()) {
+                    int nrParticipanti = competitions.get(proba).get(categorie);
+                    competitionsListView.getItems().add("   - " + categorie + " ani: " + nrParticipanti + " înscriși");
+                }
             }
         }
     }
 
+
+
+
     @FXML
-    public void onSearchButtonClick() {
+    public void onSearchButtonClick() throws ConcursException {
         String selectedProba = probaComboBox.getValue();
-        NumeProba proba = server.getNumeProba(selectedProba);
-        System.out.println("Selected proba: " + proba.toString());
         String selectedCategorie = categorieComboBox.getValue();
-        CategorieVarsta categorie = server.getCategorie(Integer.parseInt(selectedCategorie));
-        System.out.println("Selected categorie: " + categorie.toString());
 
         if (selectedProba == null || selectedCategorie == null) {
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Atentie");
-            alert.setHeaderText("Informatii lipsa");
-            alert.setContentText("Te rugam sa selectezi atat proba cat si categoria de varsta.");
-            alert.showAndWait();
+            showAlert("Te rugam sa selectezi atat proba cat si categoria de varsta.");
             return;
         }
 
+        NumeProba proba = server.getNumeProba(selectedProba);
+        CategorieVarsta categorie = server.getCategorie(Integer.parseInt(selectedCategorie));
         List<Participant> participants = server.getParticipantsByProbaAndCategorie(proba, categorie);
 
-
+        participantsListView.getItems().clear();
         if (participants.isEmpty()) {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Informatie");
-            alert.setHeaderText("Nu au fost gasiți participanti");
-            alert.setContentText("Nu exista participanti pentru proba si categoria selectata.");
-            alert.showAndWait();
+            showAlert("Nu exista participanti pentru proba si categoria selectata.");
         } else {
-            participantsListView.getItems().clear();
             for (Participant participant : participants) {
                 participantsListView.getItems().add(participant.getNume() + " - Varsta: " + participant.getVarsta());
-                System.out.println(participant.getNume() + " - Varsta: " + participant.getVarsta());
             }
         }
     }
@@ -164,58 +112,85 @@ public class OficiuLoggedIn implements Initializable, IConcursObserver {
         probaComboBox2.getItems().addAll("desen", "cautarea unei comori", "poezie");
     }
 
-
-
-    public void inscriereParticipant(){
-
+    public void inscriereParticipant1() throws ConcursException {
         String cnp = cnpTextField.getText();
         String nume = numeTextField.getText();
         int varsta = Integer.parseInt(varstaTextField.getText());
         CategorieVarsta categorie = server.getCategorieVarstaByAge(varsta);
-//        String selectedCategorie = categorieComboBox.getValue();
-//        CategorieVarsta categorie = categorieService.getCategorie(Integer.parseInt(selectedCategorie));
         int id_categorie = categorie.getId();
         String selectedProba = probaComboBox2.getValue();
-
         NumeProba proba = server.getNumeProba(selectedProba);
+        Participant p = new Participant(1, nume, varsta, cnp, persoanaOficiu.getId());
 
-
-
-
-        Participant p = new Participant(1,nume,varsta,cnp,persoanaOficiu.getId());
-
+        if (server.getParticipantByCNP(cnp) == null) {
+            boolean participantSaved = server.saveEntity(p);
+            if(!participantSaved) {
+                showAlert("Participantul nu a putut fi salvat!");
+                return;
+            }
+            Inscriere i = new Inscriere(p.getId(), proba.getId(), id_categorie);
+            boolean saved = server.saveEntityi(i);
+            showAlert("Inscriere salvata: " + saved);
+        } else {
+            Participant p2 = server.getParticipantByCNP(cnp);
+            Inscriere i = new Inscriere(p2.getId(), proba.getId(), id_categorie);
+            boolean saved = server.saveEntityi(i);
+            showAlert("Inscriere salvata: " + saved);
+        }
 
         if(server.getParticipantByCNP(cnp) == null){
             server.saveEntity(p);
-            Inscriere i = new Inscriere(p.getId(),proba.getId(),id_categorie);
-            //inscriereService.saveEntity(i);
+            Inscriere i = new Inscriere(p.getId(), proba.getId(), id_categorie);
             boolean saved = server.saveEntityi(i);
-            System.out.println("Inscriere salvata: " + saved);
-
-            System.out.println(p.toString());
-        }
-        else{
+            showAlert("Inscriere salvata: " + saved);
+        } else {
             Participant p2 = server.getParticipantByCNP(cnp);
-            int id_participant = p2.getId();
-            Inscriere i = new Inscriere(id_participant,proba.getId(),id_categorie);
-            //inscriereService.saveEntity(i);
+            Inscriere i = new Inscriere(p2.getId(), proba.getId(), id_categorie);
             boolean saved = server.saveEntityi(i);
-            System.out.println("Inscriere salvata: " + saved);
-
-            System.out.println(p2.toString());
+            showAlert("Inscriere salvata: " + saved);
         }
+    }
+    public void inscriereParticipant() throws ConcursException {
+        String cnp = cnpTextField.getText();
+        String nume = numeTextField.getText();
+        int varsta = Integer.parseInt(varstaTextField.getText());
+        CategorieVarsta categorie = server.getCategorieVarstaByAge(varsta);
+        int id_categorie = categorie.getId();
+        String selectedProba = probaComboBox2.getValue();
+        NumeProba proba = server.getNumeProba(selectedProba);
 
+        Participant p = server.getParticipantByCNP(cnp);
 
+        if (p == null) {
+            // Participant nou, creează-l fără id (ex: 0)
+            Participant newParticipant = new Participant(1, nume, varsta, cnp, persoanaOficiu.getId());
+            boolean participantSaved = server.saveEntity(newParticipant);
+            if (!participantSaved) {
+                showAlert("Participantul nu a putut fi salvat!");
+                return;
+            }
+            // Actualizează id-ul după salvare (asigură-te că metoda saveEntity setează id-ul!)
+            // Dacă nu, trebuie să recuperezi participantul după CNP:
+            newParticipant = server.getParticipantByCNP(cnp);
 
+            Inscriere i = new Inscriere(newParticipant.getId(), proba.getId(), id_categorie);
+
+            boolean saved = server.saveEntityi(i);
+            showAlert("Inscriere salvata: " + saved);
+
+        } else {
+            // Participant există deja
+            Inscriere i = new Inscriere(p.getId(), proba.getId(), id_categorie);
+            boolean saved = server.saveEntityi(i);
+            showAlert("Inscriere salvata: " + saved);
+        }
+        loadCompetitions();
 
 
     }
 
-    @FXML
-    private Button logoutButton;
 
     @FXML
-
     void logout() {
         try {
             server.logout(persoanaOficiu, this);
@@ -229,24 +204,29 @@ public class OficiuLoggedIn implements Initializable, IConcursObserver {
         ((Node)(event.getSource())).getScene().getWindow().hide();
     }
 
-
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-
+        initialize();
     }
 
     @Override
     public void participantAdded(Participant participant) throws ConcursException {
-
+        // Optional: implementare pentru actualizare în timp real
     }
 
     @Override
-    public void oficiuLoggedIn(PersoanaOficiu referee) throws ConcursException {
-
-    }
+    public void oficiuLoggedIn(PersoanaOficiu persoanaOficiu) throws ConcursException {}
 
     @Override
-    public void oficiuLoggedOut(PersoanaOficiu referee) throws ConcursException {
+    public void oficiuLoggedOut(PersoanaOficiu persoanaOficiu) throws ConcursException {
+        logout();
+    }
 
+    private void showAlert(String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Informație");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }

@@ -2,6 +2,8 @@ package src.mpp2024.service;
 
 import src.mpp2024.domain.*;
 import src.mpp2024.repo.DB.CategorieDBRepo;
+import src.mpp2024.services.ConcursException;
+import src.mpp2024.services.IConcursObserver;
 import src.mpp2024.services.IConcursService;
 
 import java.util.List;
@@ -26,6 +28,7 @@ public class CategorieService implements IConcursService {
         return List.of();
     }
 
+
     public CategorieVarsta getCategorieVarstaByAgeGroup(int min, int max) {
         return categorieDBRepo.getCategorieVarstaByAgeGroup(min, max);
     }
@@ -41,7 +44,6 @@ public class CategorieService implements IConcursService {
 
     @Override
     public boolean saveEntity(Participant p) {
-
         return false;
     }
 
@@ -50,14 +52,20 @@ public class CategorieService implements IConcursService {
         return false;
     }
 
+
     @Override
-    public PersoanaOficiu login(String username, String password) throws Exception {
+    public void login(PersoanaOficiu persoanaOficiu, IConcursObserver client) throws ConcursException {
+
+    }
+
+    @Override
+    public PersoanaOficiu getPersoanaOficiuByUsernamePassword(String username, String password) throws ConcursException {
         return null;
     }
 
     @Override
-    public List<Inscriere> getInscrieriProba(int probaId) throws Exception {
-        return List.of();
+    public void logout(PersoanaOficiu persoanaOficiu, IConcursObserver client) throws ConcursException {
+
     }
 
     @Override

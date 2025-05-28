@@ -1,4 +1,6 @@
 package src.mpp2024.objectProtocol;
 
-public class OkResponse implements Response {
+import java.io.Serializable;
+
+public class OkResponse implements Response, Serializable {
 }

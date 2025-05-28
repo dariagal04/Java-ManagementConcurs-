@@ -69,7 +69,7 @@ public class CategorieDBRepo implements ICategorieVarstaRepo {
     @Override
     public boolean saveEntity(CategorieVarsta entity) {
         try (Connection connection = dbUtils.getConnection();
-             PreparedStatement ps = connection.prepareStatement("INSERT INTO \"categoii\" (\"min\", \"max\") VALUES(?,?)")) {
+             PreparedStatement ps = connection.prepareStatement("INSERT INTO \"categorii\" (\"min\", \"max\") VALUES(?,?)")) {
             ps.setInt(0, entity.getVarstaMinima());
             ps.setInt(1, entity.getVarstaMaxima());
             ps.executeUpdate();

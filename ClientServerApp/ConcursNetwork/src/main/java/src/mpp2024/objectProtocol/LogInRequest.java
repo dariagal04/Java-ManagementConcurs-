@@ -2,7 +2,9 @@ package src.mpp2024.objectProtocol;
 
 import src.mpp2024.dto.PersoanaOficiuDTO;
 
-public class LogInRequest implements Request {
+import java.io.Serializable;
+
+public class LogInRequest implements Request, Serializable {
 
     private final PersoanaOficiuDTO persoanaOficiuDTO;
 

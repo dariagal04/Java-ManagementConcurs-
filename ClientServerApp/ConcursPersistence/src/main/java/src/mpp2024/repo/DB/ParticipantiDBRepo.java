@@ -24,8 +24,8 @@ public class ParticipantiDBRepo implements IParticipantRepo {
         dbUtils=new JdbcUtils(props);
     }
 
-    @Override
-    public boolean saveEntity(Participant entity) {
+    //@Override
+    public boolean saveEntity1(Participant entity) {
         try (Connection connection = dbUtils.getConnection();
              PreparedStatement ps = connection.prepareStatement("INSERT INTO \"participanti\" (\"nume\",\"varsta\", \"cnp\", \"persoanaOficiu_id\") VALUES(?, ?,?,?)")) {
             ps.setString(1, entity.getNume());
@@ -41,6 +41,26 @@ public class ParticipantiDBRepo implements IParticipantRepo {
             return false;
         }
     }
+    public boolean saveEntity(Participant participant) {
+        try (Connection connection = dbUtils.getConnection();
+             PreparedStatement ps = connection.prepareStatement(
+                     "INSERT INTO participant (nume, varsta, cnp, id_oficiu) VALUES ( ?, ?, ?, ?)")) {
+
+            //ps.setInt(1, participant.getId());
+            ps.setString(2, participant.getNume());
+            ps.setInt(3, participant.getVarsta());
+            ps.setString(4, participant.getCnp());
+            ps.setInt(5, participant.getIdPersoanaOficiu());
+
+            ps.executeUpdate();
+            return true;
+
+        } catch (SQLException e) {
+            logger.error("Eroare la salvarea participantului: " + e.getMessage(), e);
+            return false;
+        }
+    }
+
 
     @Override
     public boolean deleteEntity(Integer id) {

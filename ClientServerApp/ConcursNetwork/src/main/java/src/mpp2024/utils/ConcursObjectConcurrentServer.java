@@ -15,17 +15,19 @@ public class ConcursObjectConcurrentServer extends AbsConcurrentServer{
 //    private IConcursService concursServicePersoanaOficiu;
     private IConcursService server;
 
+
     private static Logger logger = LogManager.getLogger(ConcursObjectConcurrentServer.class);
     public ConcursObjectConcurrentServer(int port,  IConcursService server) {
         super(port);
 
         this.server = server;
+
     }
 
     @Override
     protected Thread createWorker(Socket client){
         ConcursClientObjectWorker worker = new ConcursClientObjectWorker(server, client);
-        Thread tw = new Thread(worker.toString());
+        Thread tw = new Thread(worker);
         return tw;
     }
 }

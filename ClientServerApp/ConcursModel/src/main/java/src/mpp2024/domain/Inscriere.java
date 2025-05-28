@@ -2,12 +2,12 @@ package src.mpp2024.domain;
 
 import src.mpp2024.domain.entity.Entitate;
 
-public class Inscriere extends Entitate<String> {
+public class Inscriere extends Entitate<Integer> {
     private int idParticipant;
     private int idProba;
     private int idCategorie;
     public Inscriere(int idParticipant, int idProba,int idCategorie) {
-        super(idParticipant + "" + idProba);
+        //super(id);
         this.idParticipant = idParticipant;
         this.idProba = idProba;
         this.idCategorie = idCategorie;

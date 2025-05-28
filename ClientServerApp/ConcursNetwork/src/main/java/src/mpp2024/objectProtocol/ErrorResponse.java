@@ -1,6 +1,8 @@
 package src.mpp2024.objectProtocol;
 
-public class ErrorResponse implements Response {
+import java.io.Serializable;
+
+public class ErrorResponse implements Response, Serializable {
     private final String message;
 
     public ErrorResponse(final String message) {this.message = message;}

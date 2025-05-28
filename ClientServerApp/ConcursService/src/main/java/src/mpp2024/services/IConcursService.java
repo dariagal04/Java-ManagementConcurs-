@@ -7,45 +7,30 @@ import java.util.Map;
 
 public interface IConcursService {
 
-    /**
-     * Autentifică o persoană de la oficiu.
-     *
-     * @param username Numele de utilizator
-     * @param password Parola
-     * @return Persoana autentificată
-     * @throws Exception dacă autentificarea eșuează
-     */
-    PersoanaOficiu login(String username, String password) throws Exception;
 
-    /**
-     * Returnează toate înscrierile pentru o probă dată.
-     *
-     * @param probaId ID-ul probei
-     * @return Lista cu înscrierile
-     * @throws Exception dacă apare o eroare la accesarea datelor
-     */
-    List<Inscriere> getInscrieriProba(int probaId) throws Exception;
+    void login(PersoanaOficiu persoanaOficiu,IConcursObserver client) throws ConcursException;
 
-    Map<String, Map<String, Integer>> getCompetitionsWithParticipants();
+    PersoanaOficiu getPersoanaOficiuByUsernamePassword(String username, String password) throws ConcursException;
+//    Map<String, Map<String, Integer>> getCompetitionsWithParticipants()throws ConcursException;
+//
+//    List<Participant> getParticipantsByProbaAndCategorie(NumeProba proba, CategorieVarsta categorie)throws ConcursException;
 
-    NumeProba getNumeProba(String selectedProba);
 
-    CategorieVarsta getCategorie(int i);
+    void logout(PersoanaOficiu persoanaOficiu, IConcursObserver client)throws ConcursException;
 
-    List<Participant> getParticipantsByProbaAndCategorie(NumeProba proba, CategorieVarsta categorie);
+    Map<String, Map<String, Integer>> getCompetitionsWithParticipants() throws ConcursException;
 
-    CategorieVarsta getCategorieVarstaByAge(int varsta);
+    NumeProba getNumeProba(String selectedProba) throws ConcursException;
 
-    Participant getParticipantByCNP(String cnp);
+    CategorieVarsta getCategorie(int i) throws ConcursException;
 
-    boolean saveEntity(Participant p);
+    List<Participant> getParticipantsByProbaAndCategorie(NumeProba proba, CategorieVarsta categorie) throws ConcursException;
 
-    boolean saveEntityi(Inscriere i);
+    CategorieVarsta getCategorieVarstaByAge(int varsta)throws ConcursException;
 
-    void logout(PersoanaOficiu persoanaOficiu, IConcursObserver oficiuLoggedIn);
+    Participant getParticipantByCNP(String cnp) throws ConcursException;
 
-    // Alte metode pot fi adăugate, de exemplu:
-    // void inscriereCopil(Copil copil, List<Proba> probe) throws Exception;
-    // List<Proba> getProbeDisponibile();
-    // List<Categorie> getCategoriiDisponibile();
+    boolean saveEntity(Participant p)throws ConcursException;
+
+    boolean saveEntityi(Inscriere i) throws ConcursException;
 }

@@ -2,7 +2,9 @@ package src.mpp2024.objectProtocol;
 
 import src.mpp2024.dto.PersoanaOficiuDTO;
 
-public class POLoggedOutResponse implements UpdateResponse{
+import java.io.Serializable;
+
+public class POLoggedOutResponse implements UpdateResponse, Serializable {
 
     private final PersoanaOficiuDTO persoanaOficiu;
     public POLoggedOutResponse(final PersoanaOficiuDTO persoanaOficiu) {this.persoanaOficiu = persoanaOficiu;}

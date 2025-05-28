@@ -56,25 +56,26 @@ public class InscriereDBRepo implements IInscriereRepo {
 
         if (isParticipantInscribedToTwoEvents(entity.getIdParticipant())) {
             logger.warn("Participant is already inscribed to 2 events.");
-            return false;  // Nu se poate înscrie dacă are deja 2 probe
+            return false;
         }
 
-//        if (isCnpExists() {
-//            logger.warn("CNP is already registered.");
-//            return false;  // Nu se poate înscrie dacă CNP-ul există deja
-//        }
-
         try (Connection connection = dbUtils.getConnection();
-             PreparedStatement ps = connection.prepareStatement("INSERT INTO \"inscriere_proba\" VALUES (?,?,?)")) {
+             PreparedStatement ps = connection.prepareStatement(
+                     "INSERT INTO \"inscriere_proba\" (participant_id, proba_id, categorie_id) VALUES (?,?,?)")) {
+
             ps.setInt(1, entity.getIdParticipant());
             ps.setInt(2, entity.getIdProba());
             ps.setInt(3, entity.getIdCategorie());
+
             ps.executeUpdate();
             return true;
+
         } catch (SQLException e) {
+            logger.error("Eroare la inserarea inscrierii: " + e.getMessage(), e);
             return false;
         }
     }
+
 
     @Override
     public boolean deleteEntity(Integer integer) {
@@ -103,7 +104,7 @@ public class InscriereDBRepo implements IInscriereRepo {
     @Override
     public Inscriere getInscriereByParticipantAndProbaAndCategorie(int idParticipant, int idProba, int idCategorie) {
         try (Connection connection = dbUtils.getConnection();
-             PreparedStatement ps = connection.prepareStatement("SELECT * FROM \"Inscrieri\" WHERE \"participant_id\" = ? AND \"proba_id\"= ? AND \"categorie_id\" = ? ")) {
+             PreparedStatement ps = connection.prepareStatement("SELECT * FROM \"inscriere_proba\" WHERE \"participant_id\" = ? AND \"proba_id\"= ? AND \"categorie_id\" = ? ")) {
             ps.setInt(0, idParticipant);
             ps.setInt(1, idProba);
             ps.setInt(2, idCategorie);
@@ -185,11 +186,12 @@ public class InscriereDBRepo implements IInscriereRepo {
 
         String intervalVarsta = categorie.getVarstaMinima() + "-" + categorie.getVarstaMaxima();
 
-        String sql = "SELECT p.nume, p.varsta, p.cnp, p.persoanaOficiu_id FROM inscriere_proba i " +
+        String sql = "SELECT p.id, p.nume, p.varsta, p.cnp, p.persoanaOficiu_id FROM inscriere_proba i " +
                 "JOIN nume_probe np ON i.proba_id = np.id " +
                 "JOIN categorii c ON i.categorie_id = c.id " +
-                "JOIN participanti p ON i.participant_id = p.id "+
+                "JOIN participanti p ON i.participant_id = p.id " +
                 "WHERE np.nume = ? AND c.id = ?";
+
 
 
         try (Connection connection = dbUtils.getConnection();

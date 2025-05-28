@@ -2,10 +2,15 @@ package src.mpp2024.objectProtocol;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import src.mpp2024.domain.Inscriere;
+import src.mpp2024.domain.CategorieVarsta;
+import src.mpp2024.domain.NumeProba;
+import src.mpp2024.domain.Participant;
 import src.mpp2024.domain.PersoanaOficiu;
-import src.mpp2024.dto.ListInscrieriProbaDTO;
+import src.mpp2024.dto.DTOUtils;
+import src.mpp2024.dto.ParticipantDTO;
 import src.mpp2024.dto.PersoanaOficiuDTO;
+import src.mpp2024.services.ConcursException;
+import src.mpp2024.services.IConcursObserver;
 import src.mpp2024.services.IConcursService;
 
 import java.io.IOException;
@@ -13,9 +18,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.StreamSupport;
 
-public class ConcursClientObjectWorker {
+import static src.mpp2024.dto.DTOUtils.getFromDTO;
+
+public class ConcursClientObjectWorker implements Runnable, IConcursObserver {
 
     private final IConcursService server;
     private ObjectInputStream input;
@@ -43,13 +51,15 @@ public class ConcursClientObjectWorker {
     public void run() {
         while(connected){
             try{
+                logger.info("astept request de la client");
                 Object request=input.readObject();
+                logger.info("Primit request"+request);
                 Object response=handleRequest((Request)request);
                 if(response != null){
                     sendResponse((Response)response);
                 }
-            }catch(IOException|ClassNotFoundException e){
-                logger.error("Eroareeee*: "+e);
+            }catch(IOException|ClassNotFoundException|ConcursException e){
+                logger.error("Eroare: "+e);
             }
             try{
                 Thread.sleep(1000);
@@ -67,122 +77,212 @@ public class ConcursClientObjectWorker {
         }
     }
 
-    private Response handleRequest(Request request) {
+    private void sendResponse(Response response) throws IOException {
+        logger.debug(response.toString());
+        synchronized (output){
+            output.writeObject(response);
+            output.flush();
+        }
+    }
+
+    private Response handleRequest(Request request) throws ConcursException {
+
         Response response=null;
         if(request instanceof LogInRequest loginRequest){
             logger.debug("Login request...");
+            System.out.println(" Server received login request: " + loginRequest.getPersoanaOficiuDTO().getUsername());
+
             PersoanaOficiuDTO persoanaOficiuDTO=loginRequest.getPersoanaOficiuDTO();
-            PersoanaOficiu persoanaOficiu = getFromDTO(refereeDTO);
+            PersoanaOficiu persoanaOficiu = DTOUtils.getFromDto(persoanaOficiuDTO);
             try{
-                server.logIn(referee,this);
+                server.login(persoanaOficiu,this);
+
                 return new OkResponse();
-            } catch (TriathlonException e) {
+            } catch (Exception e) {
                 connected=false;
                 return new ErrorResponse(e.getMessage());
             }
         }
         if(request instanceof LogOutRequest logoutRequest){
             logger.debug("Logout request...");
-            RefereeDTO refereeDTO=logoutRequest.getReferee();
-            Referee referee= DTOUtils.getFromDTO(refereeDTO);
+            PersoanaOficiuDTO persoanaOficiuDTO=logoutRequest.getPersoanaOficiuDTO();
+            PersoanaOficiu persoanaOficiu= DTOUtils.getFromDto(persoanaOficiuDTO);
             try{
-                server.logOut(referee,this);
+                server.logout(persoanaOficiu,this);
                 connected=false;
                 return new OkResponse();
-            }catch(TriathlonException e){
+            }catch(Exception e){
                 return new ErrorResponse(e.getMessage());
             }
         }
-        if(request instanceof AddResultRequest addResultRequest){
-            logger.debug("Add result request...");
-            ResultDTO resultDTO=addResultRequest.getResult();
-            Result result= DTOUtils.getFromDTO(resultDTO);
-            try{
-                server.addResult(result);
-                return new OkResponse();
-            }catch(TriathlonException e){
-                return new ErrorResponse(e.getMessage());
+        if (request instanceof FindPOByUsernamePasswordRequest gpRequest) {
+            logger.debug("Handling GetPersoanaOficiuByUsernamePasswordRequest");
+
+            String username = gpRequest.getPersoanaOficiu().getUsername();
+            String password = gpRequest.getPersoanaOficiu().getPassword();
+            logger.info("Looking for user: " + username);
+
+            PersoanaOficiu user = server.getPersoanaOficiuByUsernamePassword(username, password);
+            if (user == null) {
+                logger.warn("User not found for username: " + username);
+                return new ErrorResponse("Utilizator inexistent");
             }
+
+            PersoanaOficiuDTO dto = DTOUtils.getDTO(user);
+            return new FindPOByUsernamePasswordResponse(dto);
         }
-        if (request instanceof FindAllParticipantsRequest) {
-            logger.debug("Handling FindAllParticipantsSortedByNameRequest...");
+        if (request instanceof GetParticipantsByProbaAndCategorieRequest req) {
+            logger.debug("Processing GetParticipantsByProbaAndCategorieRequest...");
+
+            NumeProba proba = req.getProba();
+            CategorieVarsta categorie = req.getCategorie();
+
             try {
-                Iterable<Participant> participants = server.findAllParticipantsSortedByName();
-                List<ParticipantDTO> dtos = StreamSupport.stream(participants.spliterator(), false)
-                        .map(DTOUtils::getDTO)
-                        .toList();
-                return new FindAllParticipantsResponse(dtos);
-            } catch (TriathlonException e) {
+                List<Participant> participants = server.getParticipantsByProbaAndCategorie(proba, categorie);
+                return new GetParticipantsByProbaAndCategorieResponse(participants);
+            } catch (Exception e) {
                 return new ErrorResponse(e.getMessage());
             }
         }
-        if (request instanceof GetParticipantsAtEventRequest) {
-            logger.debug("Handling GetAllParticipantsAtEventRequest...");
+
+
+        if (request instanceof NewParticipantResponse req) {
             try {
-                Referee referee=DTOUtils.getFromDTO(((GetParticipantsAtEventRequest) request).getReferee());
-                List<Result> results = server.getParticipantsSortedByPoints(referee);
-                List<ResultDTO> dtos = StreamSupport.stream(results.spliterator(), false)
-                        .map(DTOUtils::getDTO)
-                        .toList();
-                return new GetParticipantsAtEventResponse(dtos);
-            } catch (TriathlonException e) {
+                Participant participantDTO = req.getParticipantDTO();
+                //Participant participant = DTOUtils.getFromDTO(participantDTO);
+                boolean saved = server.saveEntity(participantDTO);
+
+                if (saved)
+                    return new OkResponse();
+                else
+                    return new ErrorResponse("Participant could not be saved.");
+            } catch (Exception e) {
                 return new ErrorResponse(e.getMessage());
             }
         }
-        if(request instanceof FindRefereeByUsernamePasswordRequest){
-            logger.debug("Handling FindRefereeByUsernamePasswordRequest...");
-            try{
-                RefereeDTO dto=((FindRefereeByUsernamePasswordRequest) request).getUsername_password();
-                Referee referee=server.getRefereeByUsernamePassword(dto.getUsername(), dto.getPassword());
-                RefereeDTO newDto=DTOUtils.getDTO(referee);
-                return new FindRefereeByUsernamePasswordResponse(newDto);
-            }catch (TriathlonException e){
-                connected=false;
+        if (request instanceof NewInscriereResponse req) {
+            try {
+                boolean saved = server.saveEntityi(req.getInscriere());
+
+                if (saved)
+                    return new OkResponse();
+                else
+                    return new ErrorResponse("Inscriere could not be saved.");
+            } catch (Exception e) {
                 return new ErrorResponse(e.getMessage());
             }
         }
+        if (request instanceof GetCompetitionsWithParticipantsRequest) {
+            logger.debug("Handling GetCompetitionsWithParticipantsRequest...");
+            try {
+                Map<String, Map<String, Integer>> data = server.getCompetitionsWithParticipants();
+                return new GetCompetitionsWithParticipantsResponse(data);
+            } catch (Exception e) {
+                return new ErrorResponse(e.getMessage());
+            }
+        }
+        if (request instanceof SaveParticipantRequest saveRequest) {
+            try {
+                boolean saved = server.saveEntity(saveRequest.getParticipant());
+                return saved ? new OkResponse() : new ErrorResponse("Participant could not be saved.");
+            } catch (Exception e) {
+                return new ErrorResponse(e.getMessage());
+            }
+        }
+        if (request instanceof SaveInscriereRequest saveRequest) {
+            try {
+                boolean saved = server.saveEntityi(saveRequest.getInscriere());
+                return saved ? new OkResponse() : new ErrorResponse("Inscriere could not be saved.");
+            } catch (Exception e) {
+                return new ErrorResponse(e.getMessage());
+            }
+        }
+        if (request instanceof GetNumeProbaRequest req) {
+            try {
+                NumeProba proba = server.getNumeProba(req.getNumeProba());
+                return new GetNumeProbaResponse(proba);
+            } catch (Exception e) {
+                return new ErrorResponse(e.getMessage());
+            }
+        }
+        if (request instanceof GetCategorieRequest req) {
+            try {
+                CategorieVarsta categorie = server.getCategorie(req.getId());
+                return new GetCategorieResponse(categorie);
+            } catch (Exception e) {
+                return new ErrorResponse(e.getMessage());
+            }
+        }
+        if (request instanceof GetCategorieByAgeRequest req) {
+            try {
+                CategorieVarsta categorie = server.getCategorieVarstaByAge(req.getAge());
+                return new GetCategorieByAgeResponse(categorie);
+            } catch (Exception e) {
+                return new ErrorResponse(e.getMessage());
+            }
+        }
+        if (request instanceof GetParticipantByCNPRequest req) {
+            try {
+                Participant p = server.getParticipantByCNP(req.getCNP());
+                return new GetParticipantByCNPResponse(p);
+            } catch (Exception e) {
+                return new ErrorResponse(e.getMessage());
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
         return response;
     }
 
+
+
     @Override
-    public void resultAdded(Result result) throws TriathlonException {
-        ResultDTO resultDTO=DTOUtils.getDTO(result);
-        logger.debug(resultDTO.toString());
+    public void participantAdded(Participant participant) throws ConcursException {
+        ParticipantDTO participantDTO= DTOUtils.getDTO(participant);
+        Participant participant1 = DTOUtils.getFromDTO(participantDTO);
+        logger.debug(participantDTO.toString());
         try{
-            sendResponse(new NewResultResponse(resultDTO));
-        }catch(IOException e){
+            sendResponse(new NewParticipantResponse(participant1));
+        }
+        catch(IOException e){
             logger.error(e.getMessage());
         }
     }
 
     @Override
-    public void refereeLoggedIn(Referee referee) throws TriathlonException {
-        RefereeDTO refereeDTO=DTOUtils.getDTO(referee);
-        logger.debug(refereeDTO.toString());
+    public void oficiuLoggedIn(PersoanaOficiu persoanaOficiu) throws ConcursException {
+
+        PersoanaOficiuDTO persoanaOficiuDTO= DTOUtils.getDTO(persoanaOficiu);
+        logger.debug(persoanaOficiuDTO.toString());
         try{
-            sendResponse(new RefereeLoggedInResponse(refereeDTO));
-        }catch(IOException e){
+            sendResponse(new POLoggedInResponse(persoanaOficiuDTO));
+        }
+        catch(IOException e){
             logger.error(e.getMessage());
         }
     }
 
     @Override
-    public void refereeLoggedOut(Referee referee) throws TriathlonException {
-        RefereeDTO refereeDTO=DTOUtils.getDTO(referee);
-        logger.debug(refereeDTO.toString());
+    public void oficiuLoggedOut(PersoanaOficiu persoanaOficiu) throws ConcursException {
+
+        PersoanaOficiuDTO persoanaOficiuDTO= DTOUtils.getDTO(persoanaOficiu);
+        logger.debug(persoanaOficiuDTO.toString());
         try{
-            sendResponse(new RefereeLogedOutResponse(refereeDTO));
-        }catch (IOException e){
-            logger.error(e.getMessage());
+            sendResponse(new POLoggedOutResponse(persoanaOficiuDTO));
         }
-    }
-
-
-    private void sendResponse(Response response) throws IOException {
-        logger.debug(response.toString());
-        synchronized (output) {
-            output.writeObject(response);
-            output.flush();
+        catch(IOException e){
+            logger.error(e.getMessage());
         }
     }
 }

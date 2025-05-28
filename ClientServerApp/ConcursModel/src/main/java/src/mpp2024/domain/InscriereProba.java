@@ -5,7 +5,7 @@ import src.mpp2024.domain.entity.Entitate;
 
 import java.io.Serializable;
 
-public class InscriereProba extends Entitate<Integer> implements Serializable {
+public class InscriereProba extends Entitate<Integer> {
     private int nrParticipanti;
     private String numeProba;
     private String categorieVarsta;
